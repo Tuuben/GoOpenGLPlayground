@@ -58,6 +58,16 @@ var fragmentShaderSource = `
 		} 
 	`
 
+var fragmentBlueShaderSource = `
+		#version 330 core
+		out vec4 FragColor;
+		
+		void main()
+		{
+			FragColor = vec4(0.0f, 0.5f, 1.0f, 1.0f);
+		} 
+	`
+
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
@@ -96,12 +106,13 @@ func createShaderProgram(vertexSource string, fragmentSource string) uint32 {
 	// Vertext shader setup
 	// ================================
 	glVertexSourceInt, freeFn := gl.Strs(vertexSource + "\x00")
+	defer freeFn()
 	vertexShader := gl.CreateShader(gl.VERTEX_SHADER)
 
 	// How to convert this in go....
 	gl.ShaderSource(vertexShader, 1, glVertexSourceInt, nil)
-	defer freeFn()
 	gl.CompileShader(vertexShader)
+  defer gl.DeleteShader(vertexShader)
 
   err := checkShaderCompileStatus(vertexShader)
 
@@ -118,6 +129,7 @@ func createShaderProgram(vertexSource string, fragmentSource string) uint32 {
 
 	gl.ShaderSource(fragmentShader, 1, glFragSourceInt, nil)
 	gl.CompileShader(fragmentShader)
+  defer gl.DeleteShader(fragmentShader)
 
   err = checkShaderCompileStatus(fragmentShader)
 
@@ -193,8 +205,6 @@ func setupScene() {
   shaderProgram := createShaderProgram(vertexShaderSource, fragmentShaderSource)
 	gl.UseProgram(shaderProgram)
 
-//	gl.DeleteShader(vertexShader)
-// gl.DeleteShader(fragmentShader)
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(3*sizeOfFloat32), nil)
 	gl.EnableVertexAttribArray(0)
@@ -203,6 +213,9 @@ func setupScene() {
 
 
   // Roof
+  shaderProgram = createShaderProgram(vertexShaderSource, fragmentBlueShaderSource)
+	gl.UseProgram(shaderProgram)
+
 	roofPtr := unsafe.Pointer(&roofVerts[0])
 	gl.BufferData(gl.ARRAY_BUFFER, len(roofVerts)*sizeOfFloat32, roofPtr, gl.STATIC_DRAW)
 
