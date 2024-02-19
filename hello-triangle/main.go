@@ -38,6 +38,26 @@ var indicies = []uint32 {
   1, 2, 3,
 }
 
+var vertexShaderSource = `
+		#version 330 core
+		layout (location = 0) in vec3 aPos;
+	
+		void main()
+		{
+			gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1);
+		}
+	`
+
+var fragmentShaderSource = `
+		#version 330 core
+		out vec4 FragColor;
+		
+		void main()
+		{
+			FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
+		} 
+	`
+
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
@@ -72,9 +92,53 @@ func main() {
 	}
 }
 
-func createOrangeShaderProgram() {
+func createShaderProgram(vertexSource string, fragmentSource string) uint32 {
+	// Vertext shader setup
+	// ================================
+	glVertexSourceInt, freeFn := gl.Strs(vertexSource + "\x00")
+	vertexShader := gl.CreateShader(gl.VERTEX_SHADER)
 
+	// How to convert this in go....
+	gl.ShaderSource(vertexShader, 1, glVertexSourceInt, nil)
+	defer freeFn()
+	gl.CompileShader(vertexShader)
 
+  err := checkShaderCompileStatus(vertexShader)
+
+  if err != nil {
+    fmt.Println("Failed to compile Vertex Shader.")
+  }
+
+	// Fragment shader setup
+	// ================================
+	glFragSourceInt, freeFragFn := gl.Strs(fragmentSource+ "\x00")
+	defer freeFragFn()
+
+	fragmentShader := gl.CreateShader(gl.FRAGMENT_SHADER)
+
+	gl.ShaderSource(fragmentShader, 1, glFragSourceInt, nil)
+	gl.CompileShader(fragmentShader)
+
+  err = checkShaderCompileStatus(fragmentShader)
+
+  if err != nil {
+    fmt.Println("Failed to compile Fragment Shader")
+  }
+
+	// Setup shader program
+	// ============================
+	shaderProgram := gl.CreateProgram()
+	gl.AttachShader(shaderProgram, vertexShader)
+	gl.AttachShader(shaderProgram, fragmentShader)
+	gl.LinkProgram(shaderProgram)
+
+  err = checkShaderCompileStatus(shaderProgram)
+
+  if err != nil {
+    fmt.Println("Failed to compile Shader Program")
+  }
+
+  return shaderProgram
 }
 
 func checkShaderCompileStatus(shader uint32) error {
@@ -126,76 +190,11 @@ func setupScene() {
   gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indicies) * sizeOfInt, unsafe.Pointer(&indicies[0]), gl.STATIC_DRAW)
 
 
-	// Vertext shader setup
-	// ================================
-	vertexShaderSource := `
-		#version 330 core
-		layout (location = 0) in vec3 aPos;
-	
-		void main()
-		{
-			gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1);
-		}
-	`
-	glVertexSourceInt, freeFn := gl.Strs(vertexShaderSource + "\x00")
-
-	vertexShader := gl.CreateShader(gl.VERTEX_SHADER)
-
-	// How to convert this in go....
-	gl.ShaderSource(vertexShader, 1, glVertexSourceInt, nil)
-	defer freeFn()
-	gl.CompileShader(vertexShader)
-
-  err := checkShaderCompileStatus(vertexShader)
-
-  if err != nil {
-    fmt.Println("Failed to compile Vertex Shader.")
-    return;
-  }
-
-	// Fragment shader setup
-	// ================================
-	fragmentShaderSource := `
-		#version 330 core
-		out vec4 FragColor;
-		
-		void main()
-		{
-			FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-		} 
-	`
-
-	glFragSourceInt, freeFragFn := gl.Strs(fragmentShaderSource + "\x00")
-	defer freeFragFn()
-
-	fragmentShader := gl.CreateShader(gl.FRAGMENT_SHADER)
-
-	gl.ShaderSource(fragmentShader, 1, glFragSourceInt, nil)
-	gl.CompileShader(fragmentShader)
-
-  err = checkShaderCompileStatus(fragmentShader)
-
-  if err != nil {
-    fmt.Println("Failed to compile Fragment Shader")
-  }
-
-	// Setup shader program
-	// ============================
-	shaderProgram := gl.CreateProgram()
-	gl.AttachShader(shaderProgram, vertexShader)
-	gl.AttachShader(shaderProgram, fragmentShader)
-	gl.LinkProgram(shaderProgram)
-
-  err = checkShaderCompileStatus(shaderProgram)
-
-  if err != nil {
-    fmt.Println("Failed to compile Shader Program")
-  }
-
+  shaderProgram := createShaderProgram(vertexShaderSource, fragmentShaderSource)
 	gl.UseProgram(shaderProgram)
 
-	gl.DeleteShader(vertexShader)
-	gl.DeleteShader(fragmentShader)
+//	gl.DeleteShader(vertexShader)
+// gl.DeleteShader(fragmentShader)
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(3*sizeOfFloat32), nil)
 	gl.EnableVertexAttribArray(0)
