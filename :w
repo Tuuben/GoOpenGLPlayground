@@ -72,7 +72,7 @@ func main() {
 	}
 }
 
-func createOrangeShaderProgram() {
+func getShaderProgram() {
 
 
 }
@@ -186,10 +186,10 @@ func setupScene() {
 	gl.AttachShader(shaderProgram, fragmentShader)
 	gl.LinkProgram(shaderProgram)
 
-  err = checkShaderCompileStatus(shaderProgram)
+  err = checkShaderCompileStatus(fragmentShader)
 
   if err != nil {
-    fmt.Println("Failed to compile Shader Program")
+    fmt.Println("Failed to compile Fragment Shader")
   }
 
 	gl.UseProgram(shaderProgram)
@@ -210,8 +210,8 @@ func setupScene() {
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(3*sizeOfFloat32), nil)
 	gl.EnableVertexAttribArray(0)
 
-  gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
+	//gl.DrawArrays(gl.TRIANGLES, 0, 3)
+  gl.DrawElements(gl.TRIANGLES, 3, gl.UNSIGNED_INT, nil)
 
-  // Clear out Vertex Object Array (VAO)
   gl.BindVertexArray(0)
 }
