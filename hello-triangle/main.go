@@ -6,14 +6,13 @@
 package main // import "github.com/go-gl/example/gl21-cube"
 
 import (
-	"errors"
-	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"runtime"
-	"strings"
 	"unsafe"
 
+	"github.com/go-gl/example/hello-triangle/shader"
 	"github.com/go-gl/gl/v2.1/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
@@ -21,9 +20,10 @@ import (
 const width, height = 640, 480
 
 var roofVerts = []float32{
-  -0.75, 0.0, 0.0,
-  0.0, 1.0, 0.0, 
-  0.75, 0.0, 0.0,
+  // positions      //colors
+  -0.75, 0.0, 0.0,  1.0, 0.0, 0.0,
+  0.0, 1.0, 0.0,    0.0, 1.0, 0.0,
+  0.75, 0.0, 0.0,   0.0, 0.0, 1.0,
 }
 
 var triangleVerts = []float32{
@@ -38,36 +38,6 @@ var indicies = []uint32 {
   1, 2, 3,
 }
 
-var vertexShaderSource = `
-		#version 330 core
-		layout (location = 0) in vec3 aPos;
-	
-		void main()
-		{
-			gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1);
-		}
-	`
-
-var fragmentShaderSource = `
-		#version 330 core
-		out vec4 FragColor;
-		
-		void main()
-		{
-			FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);
-		} 
-	`
-
-var fragmentBlueShaderSource = `
-		#version 330 core
-		out vec4 FragColor;
-		
-		void main()
-		{
-			FragColor = vec4(0.0f, 0.5f, 1.0f, 1.0f);
-		} 
-	`
-
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
@@ -80,7 +50,7 @@ func main() {
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 4)
+  glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
@@ -100,75 +70,6 @@ func main() {
 		window.SwapBuffers()
 		glfw.PollEvents()
 	}
-}
-
-func createShaderProgram(vertexSource string, fragmentSource string) uint32 {
-	// Vertext shader setup
-	// ================================
-	glVertexSourceInt, freeFn := gl.Strs(vertexSource + "\x00")
-	defer freeFn()
-	vertexShader := gl.CreateShader(gl.VERTEX_SHADER)
-
-	// How to convert this in go....
-	gl.ShaderSource(vertexShader, 1, glVertexSourceInt, nil)
-	gl.CompileShader(vertexShader)
-  defer gl.DeleteShader(vertexShader)
-
-  err := checkShaderCompileStatus(vertexShader)
-
-  if err != nil {
-    fmt.Println("Failed to compile Vertex Shader.")
-  }
-
-	// Fragment shader setup
-	// ================================
-	glFragSourceInt, freeFragFn := gl.Strs(fragmentSource+ "\x00")
-	defer freeFragFn()
-
-	fragmentShader := gl.CreateShader(gl.FRAGMENT_SHADER)
-
-	gl.ShaderSource(fragmentShader, 1, glFragSourceInt, nil)
-	gl.CompileShader(fragmentShader)
-  defer gl.DeleteShader(fragmentShader)
-
-  err = checkShaderCompileStatus(fragmentShader)
-
-  if err != nil {
-    fmt.Println("Failed to compile Fragment Shader")
-  }
-
-	// Setup shader program
-	// ============================
-	shaderProgram := gl.CreateProgram()
-	gl.AttachShader(shaderProgram, vertexShader)
-	gl.AttachShader(shaderProgram, fragmentShader)
-	gl.LinkProgram(shaderProgram)
-
-  err = checkShaderCompileStatus(shaderProgram)
-
-  if err != nil {
-    fmt.Println("Failed to compile Shader Program")
-  }
-
-  return shaderProgram
-}
-
-func checkShaderCompileStatus(shader uint32) error {
-	var success int32 = -1
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &success)
-
-	if success == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		fmt.Printf("Failed to compile shader: %v", log)
-    return errors.New("Failed to compile")
-	}
-
-  return nil
 }
 
 func setupScene() {
@@ -192,7 +93,6 @@ func setupScene() {
 	ptr := unsafe.Pointer(&triangleVerts[0])
 	gl.BufferData(gl.ARRAY_BUFFER, len(triangleVerts)*sizeOfFloat32, ptr, gl.STATIC_DRAW)
 
-
   // EBO Element Buffer Object
   // ==========
   var EBO uint32 
@@ -201,26 +101,36 @@ func setupScene() {
   gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
   gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indicies) * sizeOfInt, unsafe.Pointer(&indicies[0]), gl.STATIC_DRAW)
 
-
-  shaderProgram := createShaderProgram(vertexShaderSource, fragmentShaderSource)
-	gl.UseProgram(shaderProgram)
-
+  //shaderProgram := createShaderProgram(vertexShaderSource, fragmentShaderSource)
+  houseShader := shader.Create("./shader/vertexShader.glsl", "./shader/fragShader.glsl")
+  houseShader.Use()
+	//gl.UseProgram(shaderProgram)
 
 	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(3*sizeOfFloat32), nil)
 	gl.EnableVertexAttribArray(0)
 
   gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
 
-
   // Roof
-  shaderProgram = createShaderProgram(vertexShaderSource, fragmentBlueShaderSource)
-	gl.UseProgram(shaderProgram)
+  roofShader := shader.Create("./shader/vertRoof.glsl", "./shader/fragRoof.glsl")
+
+  //shaderProgram = createShaderProgram(vertexRoofShaderSource, fragmentBlueShaderSource)
+  timeValue := glfw.GetTime()
+  greenValue := (math.Sin(timeValue) / 2.0) + 0.5
+
+  roofShader.Use()
+  roofShader.SetUniformVec4("ourColor", 0.0, float32(greenValue), 0.0, 1.0)
 
 	roofPtr := unsafe.Pointer(&roofVerts[0])
 	gl.BufferData(gl.ARRAY_BUFFER, len(roofVerts)*sizeOfFloat32, roofPtr, gl.STATIC_DRAW)
 
-	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(3*sizeOfFloat32), nil)
+  // Roof verts attrib pointer
+	gl.VertexAttribPointer(0, 3, gl.FLOAT, false, int32(6*sizeOfFloat32), nil)
 	gl.EnableVertexAttribArray(0)
+
+  // Roof color atrib pointer
+  gl.VertexAttribPointer(1, 3, gl.FLOAT, false, int32(6*sizeOfFloat32), unsafe.Pointer(uintptr(3 * sizeOfFloat32)))
+  gl.EnableVertexAttribArray(1)
 
   gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
 
