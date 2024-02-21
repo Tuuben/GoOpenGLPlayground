@@ -4,16 +4,19 @@ import (
 	"fmt"
 	"unsafe"
 
+	//	"github.com/go-gl/example/hello-triangle/shader"
+	//"github.com/go-gl/example/utils"
 	"github.com/go-gl/example/hello-triangle/shader"
 	"github.com/go-gl/example/utils"
 	"github.com/go-gl/example/window"
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v2.1/gl"
+	//"github.com/go-gl/gl/v4.1-core/gl"
 )
 
 var vertices = []float32 {
   -0.5, -0.5, 0.0,
   0.5, -0.5, 0.0,
-  0.5, 0.5, 0.0,
+  0.0, 0.5, 0.0,
 }
 
 func main() {
@@ -23,7 +26,7 @@ func main() {
   
     // Setup Vertext Array Object
     var VAO uint32
-    gl.GenVertexArrays(1, &VAO)
+    gl.GenVertexArrays(2, &VAO)
     gl.BindVertexArray(VAO)
 
     // Setup Vertex Buffer Object
@@ -31,11 +34,11 @@ func main() {
     gl.GenBuffers(1, &VBO)
     gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 
-    // Main triangle 
+    // // Main triangle 
     firstVerticiePtr := unsafe.Pointer(&vertices[0])
     gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*utils.SizeOfFloat32, firstVerticiePtr, gl.STATIC_DRAW)
 
-    // Create shader
+    // // Create shader
     shader := shader.Create("./shaders/vertexShader.glsl", "./shaders/fragShader.glsl")
     shader.Use()
 
@@ -43,8 +46,9 @@ func main() {
     gl.EnableVertexAttribArray(0)
 
     gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
+    gl.DrawArrays(gl.TRIANGLES, 0, 3)
   
-    gl.BindVertexArray(0)
+ //   gl.BindVertexArray(0)
     fmt.Println("Hello world")
   })
 }
