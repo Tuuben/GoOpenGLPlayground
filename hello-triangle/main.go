@@ -90,6 +90,7 @@ func setupScene() {
 	gl.GenBuffers(1, &VBO)
 	gl.BindBuffer(gl.ARRAY_BUFFER, VBO)
 
+  // Main house triangle verts being set
 	ptr := unsafe.Pointer(&triangleVerts[0])
 	gl.BufferData(gl.ARRAY_BUFFER, len(triangleVerts)*sizeOfFloat32, ptr, gl.STATIC_DRAW)
 
@@ -97,8 +98,8 @@ func setupScene() {
   // ==========
   var EBO uint32 
   gl.GenBuffers(1, &EBO)
-
   gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, EBO)
+
   gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(indicies) * sizeOfInt, unsafe.Pointer(&indicies[0]), gl.STATIC_DRAW)
 
   //shaderProgram := createShaderProgram(vertexShaderSource, fragmentShaderSource)
@@ -133,6 +134,5 @@ func setupScene() {
 
   gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
 
-  // Clear out Vertex Object Array (VAO)
   gl.BindVertexArray(0)
 }
