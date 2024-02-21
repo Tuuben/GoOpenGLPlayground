@@ -114,7 +114,6 @@ func setupScene() {
   // Roof
   roofShader := shader.Create("./shader/vertRoof.glsl", "./shader/fragRoof.glsl")
 
-  //shaderProgram = createShaderProgram(vertexRoofShaderSource, fragmentBlueShaderSource)
   timeValue := glfw.GetTime()
   greenValue := (math.Sin(timeValue) / 2.0) + 0.5
 
