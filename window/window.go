@@ -13,15 +13,15 @@ func init() {
 	runtime.LockOSThread()
 }
 
-func Create(width int, height int, name string, whileAlive func()) {
+func Create(width int, height int, name string, onStart func(), onUpdate func()) {
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
 	}
 	defer glfw.Terminate()
 
 	glfw.WindowHint(glfw.Resizable, glfw.False)
-  glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
+  glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 3)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
@@ -35,8 +35,10 @@ func Create(width int, height int, name string, whileAlive func()) {
 		panic(err)
 	}
 
+  onStart();
+
   for !window.ShouldClose() {
-    whileAlive()
+    onUpdate()
     window.SwapBuffers()
     glfw.PollEvents()
   }
